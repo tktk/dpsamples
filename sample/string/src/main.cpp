@@ -1,8 +1,5 @@
 ﻿#include "dp/dp.h"
 #include "dp/common/string.h"
-#include "dp/common/utf8.h"
-#include "dp/common/utf16.h"
-#include "dp/common/utf32.h"
 
 #include <cstdio>
 
@@ -28,39 +25,159 @@ void dump(
     std::printf( "\n" );
 }
 
-template< class STR_T >
-void to(
-    const char *            _TO
-    , const dp::String &    _STR
-    , const dp::Utf8 &      _UTF8
-    , const dp::Utf16 &     _UTF16
-    , const dp::Utf32 &     _UTF32
+void toString(
+    const dp::Utf8 &    _UTF8
+    , const dp::Utf16 & _UTF16
+    , const dp::Utf32 & _UTF32
 )
 {
-    std::printf( "  to %s\n", _TO );
+    std::printf( "  to %s\n", STRING );
 
-    STR_T   fromStr( _STR );
-    dump(
-        STRING
-        , fromStr
+    dp::String  fromUtf8;
+    dp::toString(
+        fromUtf8
+        , _UTF8
     );
-
-    STR_T   fromUtf8( _UTF8 );
     dump(
         UTF8
         , fromUtf8
     );
 
-    STR_T   fromUtf16( _UTF16 );
+    dp::String  fromUtf16;
+    dp::toString(
+        fromUtf16
+        , _UTF16
+    );
     dump(
         UTF16
         , fromUtf16
     );
 
-    STR_T   fromUtf32( _UTF32 );
+    dp::String  fromUtf32;
+    dp::toString(
+        fromUtf32
+        , _UTF32
+    );
     dump(
         UTF32
         , fromUtf32
+    );
+}
+
+void toUtf8(
+    const dp::String &  _STRING
+    , const dp::Utf16 & _UTF16
+    , const dp::Utf32 & _UTF32
+)
+{
+    std::printf( "  to %s\n", UTF8 );
+
+    dp::Utf8    fromString;
+    dp::toUtf8(
+        fromString
+        , _STRING
+    );
+    dump(
+        STRING
+        , fromString
+    );
+
+    dp::Utf8    fromUtf16;
+    dp::toUtf8(
+        fromUtf16
+        , _UTF16
+    );
+    dump(
+        UTF16
+        , fromUtf16
+    );
+
+    dp::Utf8    fromUtf32;
+    dp::toUtf8(
+        fromUtf32
+        , _UTF32
+    );
+    dump(
+        UTF32
+        , fromUtf32
+    );
+}
+
+void toUtf16(
+    const dp::String &  _STRING
+    , const dp::Utf8 &  _UTF8
+    , const dp::Utf32 & _UTF32
+)
+{
+    std::printf( "  to %s\n", UTF16 );
+
+    dp::Utf16   fromString;
+    dp::toUtf16(
+        fromString
+        , _STRING
+    );
+    dump(
+        STRING
+        , fromString
+    );
+
+    dp::Utf16   fromUtf8;
+    dp::toUtf16(
+        fromUtf8
+        , _UTF8
+    );
+    dump(
+        UTF8
+        , fromUtf8
+    );
+
+    dp::Utf16   fromUtf32;
+    dp::toUtf16(
+        fromUtf32
+        , _UTF32
+    );
+    dump(
+        UTF32
+        , fromUtf32
+    );
+}
+
+void toUtf32(
+    const dp::String &  _STRING
+    , const dp::Utf8 &  _UTF8
+    , const dp::Utf16 & _UTF16
+)
+{
+    std::printf( "  to %s\n", UTF32 );
+
+    dp::Utf32   fromString;
+    dp::toUtf32(
+        fromString
+        , _STRING
+    );
+    dump(
+        STRING
+        , fromString
+    );
+
+    dp::Utf32   fromUtf8;
+    dp::toUtf32(
+        fromUtf8
+        , _UTF8
+    );
+    dump(
+        UTF8
+        , fromUtf8
+    );
+
+    dp::Utf32   fromUtf16;
+    dp::toUtf32(
+        fromUtf16
+        , _UTF16
+    );
+    dump(
+        UTF16
+        , fromUtf16
     );
 }
 
@@ -70,42 +187,49 @@ int dpMain(
 {
     for( const auto & ARG : _args ) {
         dp::String  str( ARG );
-        dp::Utf8    utf8( ARG );
-        dp::Utf16   utf16( ARG );
-        dp::Utf32   utf32( ARG );
+
+        dp::Utf8    utf8;
+        dp::toUtf8(
+            utf8
+            , str
+        );
+
+        dp::Utf16   utf16;
+        dp::toUtf16(
+            utf16
+            , str
+        );
+
+        dp::Utf32   utf32;
+        dp::toUtf32(
+            utf32
+            , str
+        );
 
         std::printf( "%s : \"%s\"\n", STRING, str.c_str() );
 
-        to< dp::String >(
-            STRING
-            , str
-            , utf8
+        toString(
+            utf8
             , utf16
             , utf32
         );
 
-        to< dp::Utf8 >(
-            UTF8
-            , str
-            , utf8
+        toUtf8(
+            str
             , utf16
             , utf32
         );
 
-        to< dp::Utf16 >(
-            UTF16
-            , str
+        toUtf16(
+            str
             , utf8
-            , utf16
             , utf32
         );
 
-        to< dp::Utf32 >(
-            UTF32
-            , str
+        toUtf32(
+            str
             , utf8
             , utf16
-            , utf32
         );
     }
 
