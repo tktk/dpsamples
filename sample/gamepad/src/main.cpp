@@ -58,7 +58,7 @@ void manageGamePads(
             , const dp::GamePadKey &    _KEY
         )
         {
-            if( _gamePads.find( _KEY ) == _gamePads.end() ) {
+            if( _gamePads.find( _KEY ) != _gamePads.end() ) {
                 return;
             }
 
@@ -74,8 +74,10 @@ void manageGamePads(
                 )
             );
 
-            dp::String  name(
-                gamePad->getName()
+            dp::String  name;
+            dp::toString(
+                name
+                , gamePad->getName()
             );
 
             std::printf( "name : %s\n", name.c_str() );
