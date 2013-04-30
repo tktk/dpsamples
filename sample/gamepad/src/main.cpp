@@ -7,9 +7,14 @@
 #include "dp/common/string.h"
 
 #include <map>
+#include <memory>
+#include <utility>
 #include <cstdio>
 
-typedef std::map< const dp::GamePadKey, dp::GamePad * > GamePads;
+typedef std::map<
+    dp::GamePadKey
+    , std::unique_ptr< dp::GamePad >
+> GamePads;
 
 void manageGamePads(
     GamePads &  _gamePads
@@ -67,10 +72,12 @@ void manageGamePads(
                 , gamePadInfo
             );
 
+            std::unique_ptr< dp::GamePad >  uniquePtr( gamePad );
+
             _gamePads.insert(
                 GamePads::value_type(
                     _KEY
-                    , gamePad
+                    , std::move( uniquePtr )
                 )
             );
 
@@ -99,7 +106,7 @@ void manageGamePads(
                 return;
             }
 
-            delete it->second;
+            auto    uniquePtr = std::move( it->second );
 
             _gamePads.erase( it );
 
@@ -123,10 +130,6 @@ int dpMain(
     manageGamePads(
         gamePads
     );
-
-    for( auto & pair : gamePads ) {
-        delete pair.second;
-    }
 
     return 0;
 }
