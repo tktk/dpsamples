@@ -11,15 +11,15 @@
 #include <utility>
 #include <cstdio>
 
-typedef std::map<
-    dp::GamePadKey
-    , std::unique_ptr< dp::GamePad >
-> GamePads;
-
-void manageGamePads(
-    GamePads &  _gamePads
+int dpMain(
+    dp::Args &
 )
 {
+    std::map<
+        dp::GamePadKey
+        , std::unique_ptr< dp::GamePad >
+    > gamePads;
+
     dp::GamePadInfo gamePadInfo;
     gamePadInfo.setButtonEventHandler(
         [](
@@ -55,7 +55,7 @@ void manageGamePads(
     dp::GamePadManagerInfo  gamePadManagerInfo;
     gamePadManagerInfo.setConnectEventHandler(
         [
-            &_gamePads
+            &gamePads
             , &gamePadInfo
         ]
         (
@@ -63,7 +63,7 @@ void manageGamePads(
             , const dp::GamePadKey &    _KEY
         )
         {
-            if( _gamePads.find( _KEY ) != _gamePads.end() ) {
+            if( gamePads.find( _KEY ) != gamePads.end() ) {
                 return;
             }
 
@@ -74,8 +74,8 @@ void manageGamePads(
 
             std::unique_ptr< dp::GamePad >  uniquePtr( gamePad );
 
-            _gamePads.insert(
-                GamePads::value_type(
+            gamePads.insert(
+                decltype( gamePads )::value_type(
                     _KEY
                     , std::move( uniquePtr )
                 )
@@ -94,21 +94,21 @@ void manageGamePads(
     );
     gamePadManagerInfo.setDisconnectEventHandler(
         [
-            &_gamePads
+            &gamePads
         ]
         (
             dp::GamePadManager &        _manager
             , const dp::GamePadKey &    _KEY
         )
         {
-            auto    it = _gamePads.find( _KEY );
-            if( it == _gamePads.end() ) {
+            auto    it = gamePads.find( _KEY );
+            if( it == gamePads.end() ) {
                 return;
             }
 
             auto    uniquePtr = std::move( it->second );
 
-            _gamePads.erase( it );
+            gamePads.erase( it );
 
             std::printf( "gamepad disconnect\n" );
         }
@@ -119,17 +119,6 @@ void manageGamePads(
     std::printf( "Press ENTER to quit\n" );
 
     std::getchar();
-}
-
-int dpMain(
-    dp::Args &
-)
-{
-    GamePads    gamePads;
-
-    manageGamePads(
-        gamePads
-    );
 
     return 0;
 }
