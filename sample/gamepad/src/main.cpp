@@ -11,14 +11,16 @@
 #include <utility>
 #include <cstdio>
 
+typedef std::map<
+    dp::GamePadKey
+    , std::unique_ptr< dp::GamePad >
+> GamePads;
+
 int dpMain(
     dp::Args &
 )
 {
-    std::map<
-        dp::GamePadKey
-        , std::unique_ptr< dp::GamePad >
-    > gamePads;
+    GamePads    gamePads;
 
     dp::GamePadInfo gamePadInfo;
     gamePadInfo.setButtonEventHandler(
@@ -75,7 +77,7 @@ int dpMain(
             std::unique_ptr< dp::GamePad >  uniquePtr( gamePad );
 
             gamePads.insert(
-                decltype( gamePads )::value_type(
+                GamePads::value_type(
                     _KEY
                     , std::move( uniquePtr )
                 )
@@ -87,9 +89,10 @@ int dpMain(
                 , gamePad->getName()
             );
 
-            std::printf( "name : %s\n", name.c_str() );
-            std::printf( "buttons : %u\n", gamePad->getButtons() );
-            std::printf( "axes : %u\n", gamePad->getAxes() );
+            std::printf( "gamepad connected\n" );
+            std::printf( "  name : %s\n", name.c_str() );
+            std::printf( "  buttons : %u\n", gamePad->getButtons() );
+            std::printf( "  axes : %u\n", gamePad->getAxes() );
         }
     );
     gamePadManagerInfo.setDisconnectEventHandler(
@@ -110,7 +113,7 @@ int dpMain(
 
             gamePads.erase( it );
 
-            std::printf( "gamepad disconnect\n" );
+            std::printf( "gamepad disconnected\n" );
         }
     );
 
