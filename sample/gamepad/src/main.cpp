@@ -11,10 +11,66 @@
 #include <utility>
 #include <cstdio>
 
+typedef std::unique_ptr< dp::GamePad > GamePadUniquePtr;
+
 typedef std::map<
     dp::GamePadKey
-    , std::unique_ptr< dp::GamePad >
+    , GamePadUniquePtr
 > GamePads;
+
+void connectGamePad(
+    const dp::GamePadKey &      _KEY
+    , const dp::GamePadInfo &   _INFO
+    , GamePads &                _gamePads
+)
+{
+    if( _gamePads.find( _KEY ) != _gamePads.end() ) {
+        return;
+    }
+
+    GamePadUniquePtr    uniquePtr(
+        new dp::GamePad(
+            _KEY
+            , _INFO
+        )
+    );
+    const auto &    GAME_PAD = *uniquePtr;
+
+    _gamePads.insert(
+        GamePads::value_type(
+            _KEY
+            , std::move( uniquePtr )
+        )
+    );
+
+    dp::String  name;
+    dp::toString(
+        name
+        , GAME_PAD.getName()
+    );
+
+    std::printf( "gamepad connected\n" );
+    std::printf( "  name : %s\n", name.c_str() );
+    std::printf( "  buttons : %u\n", GAME_PAD.getButtons() );
+    std::printf( "  axes : %u\n", GAME_PAD.getAxes() );
+}
+
+void disconnectGamePad(
+    const dp::GamePadKey &  _KEY
+    , GamePads &            _gamePads
+)
+{
+    auto    it = _gamePads.find( _KEY );
+    if( it == _gamePads.end() ) {
+        return;
+    }
+
+    auto    uniquePtr = std::move( it->second );
+
+    _gamePads.erase( it );
+
+    std::printf( "gamepad disconnected\n" );
+}
 
 int dpMain(
     dp::Args &
@@ -63,57 +119,21 @@ int dpMain(
         (
             dp::GamePadManager &        _manager
             , const dp::GamePadKey &    _KEY
+            , bool                      _connected
         )
         {
-            if( gamePads.find( _KEY ) != gamePads.end() ) {
-                return;
-            }
-
-            auto    gamePad = new dp::GamePad(
-                _KEY
-                , gamePadInfo
-            );
-
-            std::unique_ptr< dp::GamePad >  uniquePtr( gamePad );
-
-            gamePads.insert(
-                GamePads::value_type(
+            if( _connected ) {
+                connectGamePad(
                     _KEY
-                    , std::move( uniquePtr )
-                )
-            );
-
-            dp::String  name;
-            dp::toString(
-                name
-                , gamePad->getName()
-            );
-
-            std::printf( "gamepad connected\n" );
-            std::printf( "  name : %s\n", name.c_str() );
-            std::printf( "  buttons : %u\n", gamePad->getButtons() );
-            std::printf( "  axes : %u\n", gamePad->getAxes() );
-        }
-    );
-    gamePadManagerInfo.setDisconnectEventHandler(
-        [
-            &gamePads
-        ]
-        (
-            dp::GamePadManager &        _manager
-            , const dp::GamePadKey &    _KEY
-        )
-        {
-            auto    it = gamePads.find( _KEY );
-            if( it == gamePads.end() ) {
-                return;
+                    , gamePadInfo
+                    , gamePads
+                );
+            } else {
+                disconnectGamePad(
+                    _KEY
+                    , gamePads
+                );
             }
-
-            auto    uniquePtr = std::move( it->second );
-
-            gamePads.erase( it );
-
-            std::printf( "gamepad disconnected\n" );
         }
     );
 
