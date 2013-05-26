@@ -186,12 +186,16 @@ int dpMain(
 )
 {
     for( const auto & ARG : _args ) {
-        dp::String  str( ARG );
+        dp::String  str;
+        dp::toString(
+            str
+            , ARG
+        );
 
         dp::Utf8    utf8;
         dp::toUtf8(
             utf8
-            , str
+            , ARG
         );
 
         dp::Utf16   utf16;
@@ -200,30 +204,26 @@ int dpMain(
             , str
         );
 
-        dp::Utf32   utf32;
-        dp::toUtf32(
-            utf32
-            , str
-        );
+        const auto &    UTF32 = ARG;
 
         std::printf( "%s : \"%s\"\n", STRING, str.c_str() );
 
         toString(
             utf8
             , utf16
-            , utf32
+            , UTF32
         );
 
         toUtf8(
             str
             , utf16
-            , utf32
+            , UTF32
         );
 
         toUtf16(
             str
             , utf8
-            , utf32
+            , UTF32
         );
 
         toUtf32(
