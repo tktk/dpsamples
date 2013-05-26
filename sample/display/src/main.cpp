@@ -5,7 +5,13 @@
 #include "dp/display/display.h"
 #include "dp/display/displaymode.h"
 
+#include <vector>
+#include <mutex>
+#include <algorithm>
+#include <cstring>
 #include <cstdio>
+
+typedef std::vector< dp::DisplayKey > Keys;
 
 void printDisplayInfo(
     dp::DisplayManager &        _manager
@@ -40,36 +46,164 @@ void printDisplayInfo(
     );
 }
 
+int inputInt(
+)
+{
+    char    buffer[ 100 ];
+
+    std::fgets(
+        buffer
+        , sizeof( buffer )
+        , stdin
+    );
+
+    char *  endPtr = nullptr;
+    auto    input = strtol(
+        buffer
+        , &endPtr
+        , 10
+    );
+    if( buffer == endPtr || *endPtr != '\n' ) {
+        input = -1;
+    }
+
+    while( buffer[ std::strlen( buffer ) - 1 ] != '\n' ) {
+        std::fgets(
+            buffer
+            , sizeof( buffer )
+            , stdin
+        );
+    }
+
+    return input;
+}
+
+void showDisplayes(
+    const Keys &                    _KEYS
+    , const dp::DisplayManager &    _DISPLAY_MANAGER
+)
+{
+    //TODO
+}
+
+void mainMenu(
+    std::mutex &                    _mutex
+    , const Keys &                  _KEYS
+    , const dp::DisplayManager &    _DISPLAY_MANAGER
+)
+{
+    while( 1 ) {
+        std::printf( "0 : show displayes\n" );
+        std::printf( "* : quit\n" );
+
+        switch( inputInt() ) {
+        case 0:
+            showDisplayes(
+                _KEYS
+                , _DISPLAY_MANAGER
+            );
+            break;
+
+        default:
+            return;
+            break;
+        }
+    }
+}
+
+Keys::iterator findKey(
+    const dp::DisplayKey &  _KEY
+    , Keys &                _keys
+)
+{
+    return std::find_if(
+        _keys.begin()
+        , _keys.end()
+        , [
+            &_KEY
+        ]
+        (
+            const dp::DisplayKey &  _KEY2
+        )
+        {
+            return _KEY == _KEY2;
+        }
+    );
+}
+
+void addKey(
+    const dp::DisplayKey &  _KEY
+    , Keys &                _keys
+)
+{
+    if( findKey(
+        _KEY
+        , _keys
+    ) != _keys.end() ) {
+        return;
+    }
+
+    _keys.push_back( _KEY );
+}
+
+void removeKey(
+    const dp::DisplayKey &  _KEY
+    , Keys &                _keys
+)
+{
+    auto    it = findKey(
+        _KEY
+        , _keys
+    );
+    if( it == _keys.end() ) {
+        return;
+    }
+
+    _keys.erase( it );
+}
+
 int dpMain(
     dp::Args &
 )
 {
+    std::mutex  mutex;
+    Keys        keys;
+
     dp::DisplayManagerInfo  displayManagerInfo;
     displayManagerInfo.setConnectEventHandler(
-        [](
+        [
+            &mutex
+            , &keys
+        ]
+        (
             dp::DisplayManager &        _manager
             , const dp::DisplayKey &    _KEY
             , bool                      _connected
         )
         {
-            if( _connected ) {
-                std::printf( "display connected\n" );
+            std::unique_lock< std::mutex >  lock( mutex );
 
-                printDisplayInfo(
-                    _manager
-                    , _KEY
+            if( _connected ) {
+                addKey(
+                    _KEY
+                    , keys
                 );
             } else {
-                std::printf( "display disconnected\n" );
+                removeKey(
+                    _KEY
+                    , keys
+                );
             }
         }
     );
 
     dp::DisplayManager  displayManager( displayManagerInfo );
 
-    std::printf( "Press ENTER to quit\n" );
-
-    std::getchar();
+    mainMenu(
+        mutex
+        , keys
+        , displayManager
+    );
 
     return 0;
 }
