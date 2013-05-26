@@ -1,4 +1,4 @@
-﻿#include "dp/dp.h"
+﻿#include "dp/common/cli.h"
 #include "dp/input/gamepadmanager.h"
 #include "dp/input/gamepadmanagerinfo.h"
 #include "dp/input/gamepadkey.h"
