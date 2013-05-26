@@ -1,4 +1,4 @@
-﻿#include "dp/dp.h"
+﻿#include "dp/common/cli.h"
 #include "dp/display/displaymanager.h"
 #include "dp/display/displaymanagerinfo.h"
 #include "dp/display/displaykey.h"
