@@ -17,6 +17,8 @@ typedef std::unique_lock< std::mutex > Lock;
 int inputInt(
 )
 {
+    std::printf( "> " );
+
     char    buffer[ 100 ];
 
     std::fgets(
@@ -78,6 +80,93 @@ void showDisplayes(
     }
 }
 
+void showDisplayDetailsDisplayes(
+    std::mutex &            _mutex
+    , const Keys &          _KEYS
+    , dp::DisplayManager &  _manager
+)
+{
+    Lock    lock( _mutex );
+
+    auto    index = 0;
+    for( const auto & KEY : _KEYS ) {
+        printf( "%d : ", index );
+        index++;
+
+        const auto  DISPLAY = _manager.getDisplay(
+            KEY
+        );
+
+        showDisplay(
+            DISPLAY
+        );
+    }
+
+    printf( "* : cancel\n" );
+}
+
+void showDisplayDetails(
+    const dp::DisplayKey &  _KEY
+    , dp::DisplayManager &  _manager
+)
+{
+    const auto  DISPLAY = _manager.getDisplay(
+        _KEY
+    );
+
+    const auto  MODE = _manager.getDisplayMode(
+        DISPLAY.getModeKey()
+    );
+
+    std::printf(
+        "size : %dx%d\n"
+        , DISPLAY.getWidth()
+        , DISPLAY.getHeight()
+    );
+    std::printf(
+        "position : %dx%d\n"
+        , DISPLAY.getX()
+        , DISPLAY.getY()
+    );
+    std::printf( "mode :\n" );
+    std::printf(
+        "  size : %dx%d\n"
+        , MODE.getWidth()
+        , MODE.getHeight()
+    );
+}
+
+void showDisplayDetailsMenu(
+    std::mutex &            _mutex
+    , const Keys &          _KEYS
+    , dp::DisplayManager &  _manager
+)
+{
+    while( 1 ) {
+        std::printf( "show display details\n" );
+        showDisplayDetailsDisplayes(
+            _mutex
+            , _KEYS
+            , _manager
+        );
+
+        auto    index = inputInt();
+
+        Lock    lock( _mutex );
+
+        if( index >= 0 && index < _KEYS.size() ) {
+            showDisplayDetails(
+                _KEYS[ index ]
+                , _manager
+            );
+        } else {
+            return;
+        }
+
+        std::printf( "\n" );
+    }
+}
+
 void mainMenu(
     std::mutex &            _mutex
     , const Keys &          _KEYS
@@ -85,7 +174,9 @@ void mainMenu(
 )
 {
     while( 1 ) {
+        std::printf( "main menu\n" );
         std::printf( "0 : show displayes\n" );
+        std::printf( "1 : show display details\n" );
         std::printf( "* : quit\n" );
 
         switch( inputInt() ) {
@@ -97,10 +188,20 @@ void mainMenu(
             );
             break;
 
+        case 1:
+            showDisplayDetailsMenu(
+                _mutex
+                , _KEYS
+                , _manager
+            );
+            break;
+
         default:
             return;
             break;
         }
+
+        std::printf( "\n" );
     }
 }
 
