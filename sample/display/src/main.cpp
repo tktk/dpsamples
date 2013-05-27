@@ -12,39 +12,7 @@
 #include <cstdio>
 
 typedef std::vector< dp::DisplayKey > Keys;
-
-void printDisplayInfo(
-    dp::DisplayManager &        _manager
-    , const dp::DisplayKey &    _KEY
-)
-{
-    const auto  DISPLAY = _manager.getDisplay(
-        _KEY
-    );
-
-    const auto  DISPLAY_MODE = _manager.getDisplayMode(
-        DISPLAY.getModeKey()
-    );
-
-    std::printf(
-        "  position : %dx%d\n"
-        , DISPLAY.getX()
-        , DISPLAY.getY()
-    );
-    std::printf(
-        "  size : %dx%d\n"
-        , DISPLAY.getWidth()
-        , DISPLAY.getHeight()
-    );
-    std::printf(
-        "  mode :\n"
-    );
-    std::printf(
-        "    size : %dx%d\n"
-        , DISPLAY_MODE.getWidth()
-        , DISPLAY_MODE.getHeight()
-    );
-}
+typedef std::unique_lock< std::mutex > Lock;
 
 int inputInt(
 )
@@ -78,18 +46,42 @@ int inputInt(
     return input;
 }
 
-void showDisplayes(
-    const Keys &                    _KEYS
-    , const dp::DisplayManager &    _DISPLAY_MANAGER
+void showDisplay(
+    const dp::Display & _DISPLAY
 )
 {
-    //TODO
+    std::printf(
+        "%dx%d+%d+%d\n"
+        , _DISPLAY.getWidth()
+        , _DISPLAY.getHeight()
+        , _DISPLAY.getX()
+        , _DISPLAY.getY()
+    );
+}
+
+void showDisplayes(
+    std::mutex &            _mutex
+    , const Keys &          _KEYS
+    , dp::DisplayManager &  _manager
+)
+{
+    Lock    lock( _mutex );
+
+    for( const auto & KEY : _KEYS ) {
+        const auto  DISPLAY = _manager.getDisplay(
+            KEY
+        );
+
+        showDisplay(
+            DISPLAY
+        );
+    }
 }
 
 void mainMenu(
-    std::mutex &                    _mutex
-    , const Keys &                  _KEYS
-    , const dp::DisplayManager &    _DISPLAY_MANAGER
+    std::mutex &            _mutex
+    , const Keys &          _KEYS
+    , dp::DisplayManager &  _manager
 )
 {
     while( 1 ) {
@@ -99,8 +91,9 @@ void mainMenu(
         switch( inputInt() ) {
         case 0:
             showDisplayes(
-                _KEYS
-                , _DISPLAY_MANAGER
+                _mutex
+                , _KEYS
+                , _manager
             );
             break;
 
@@ -181,7 +174,7 @@ int dpMain(
             , bool                      _connected
         )
         {
-            std::unique_lock< std::mutex >  lock( mutex );
+            Lock    lock( mutex );
 
             if( _connected ) {
                 addKey(
