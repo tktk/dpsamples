@@ -167,6 +167,15 @@ void showDisplayDetailsMenu(
     }
 }
 
+void configDisplayMenu(
+    std::mutex &            _mutex
+    , const Keys &          _KEYS
+    , dp::DisplayManager &  _manager
+)
+{
+    //TODO
+}
+
 void mainMenu(
     std::mutex &            _mutex
     , const Keys &          _KEYS
@@ -177,6 +186,7 @@ void mainMenu(
         std::printf( "main menu\n" );
         std::printf( "0 : show displayes\n" );
         std::printf( "1 : show display details\n" );
+        std::printf( "2 : config display\n" );
         std::printf( "* : quit\n" );
 
         switch( inputInt() ) {
@@ -190,6 +200,14 @@ void mainMenu(
 
         case 1:
             showDisplayDetailsMenu(
+                _mutex
+                , _KEYS
+                , _manager
+            );
+            break;
+
+        case 2:
+            configDisplayMenu(
                 _mutex
                 , _KEYS
                 , _manager
