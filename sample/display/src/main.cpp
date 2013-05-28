@@ -4,6 +4,7 @@
 #include "dp/display/displaykey.h"
 #include "dp/display/display.h"
 #include "dp/display/displaymode.h"
+#include "dp/display/displayconfig.h"
 
 #include <vector>
 #include <mutex>
@@ -14,7 +15,8 @@
 typedef std::vector< dp::DisplayKey > Keys;
 typedef std::unique_lock< std::mutex > Lock;
 
-int inputInt(
+bool inputInt(
+    int &   _result
 )
 {
     std::printf( "> " );
@@ -28,14 +30,14 @@ int inputInt(
     );
 
     char *  endPtr = nullptr;
-    auto    input = strtol(
+    _result = strtol(
         buffer
         , &endPtr
         , 10
     );
-    if( buffer == endPtr || *endPtr != '\n' ) {
-        input = -1;
-    }
+
+    // 1文字以上入力され、入力データが全て変換されているなら正常な入力
+    bool    inputed = buffer != endPtr && *endPtr == '\n';
 
     while( buffer[ std::strlen( buffer ) - 1 ] != '\n' ) {
         std::fgets(
@@ -45,7 +47,7 @@ int inputInt(
         );
     }
 
-    return input;
+    return inputed;
 }
 
 void showDisplay(
@@ -80,7 +82,7 @@ void showDisplayes(
     }
 }
 
-void showDisplayDetailsDisplayes(
+void showDisplayesWithIndex(
     std::mutex &            _mutex
     , const Keys &          _KEYS
     , dp::DisplayManager &  _manager
@@ -90,7 +92,7 @@ void showDisplayDetailsDisplayes(
 
     auto    index = 0;
     for( const auto & KEY : _KEYS ) {
-        printf( "%d : ", index );
+        std::printf( "%d : ", index );
         index++;
 
         const auto  DISPLAY = _manager.getDisplay(
@@ -101,8 +103,6 @@ void showDisplayDetailsDisplayes(
             DISPLAY
         );
     }
-
-    printf( "* : cancel\n" );
 }
 
 void showDisplayDetails(
@@ -144,26 +144,134 @@ void showDisplayDetailsMenu(
 {
     while( 1 ) {
         std::printf( "show display details\n" );
-        showDisplayDetailsDisplayes(
+        showDisplayesWithIndex(
             _mutex
             , _KEYS
             , _manager
         );
+        std::printf( "\n" );
+        std::printf( "* : cancel\n" );
 
-        auto    index = inputInt();
-
-        Lock    lock( _mutex );
-
-        if( index >= 0 && index < _KEYS.size() ) {
-            showDisplayDetails(
-                _KEYS[ index ]
-                , _manager
-            );
-        } else {
+        int index;
+        if( inputInt( index ) == false ) {
             return;
         }
 
+        dp::DisplayKey  key;
+
+        {
+            Lock    lock( _mutex );
+
+            if( index >= 0 && index < _KEYS.size() ) {
+                key = _KEYS[ index ];
+            } else {
+                return;
+            }
+        }
+
+        showDisplayDetails(
+            key
+            , _manager
+        );
+    }
+}
+
+void configDisplayInputX(
+    dp::DisplayConfig & _config
+)
+{
+    std::printf( "input x\n" );
+
+    int x;
+
+    if( inputInt( x ) ) {
+        _config.setX( x );
+    }
+}
+
+void configDisplayInputY(
+    dp::DisplayConfig & _config
+)
+{
+    std::printf( "input y\n" );
+
+    int y;
+
+    if( inputInt( y ) ) {
+        _config.setY( y );
+    }
+}
+
+void applyDisplayConfig(
+    dp::DisplayConfig &         _config
+    , const dp::DisplayKey &    _KEY
+    , dp::DisplayManager &      _manager
+)
+{
+    _manager.applyDisplayConfig(
+        _KEY
+        , _config
+    );
+}
+
+void configDisplay(
+    const dp::DisplayKey &  _KEY
+    , dp::DisplayManager &  _manager
+)
+{
+    const auto  DISPLAY = _manager.getDisplay(
+        _KEY
+    );
+
+    dp::DisplayConfig   config(
+        DISPLAY
+    );
+
+    while( 1 ) {
+        std::printf(
+            "config %dx%d+%d+%d\n"
+            , DISPLAY.getWidth()
+            , DISPLAY.getHeight()
+            , DISPLAY.getX()
+            , DISPLAY.getY()
+        );
+        std::printf( "1 : x = %d\n", config.getX() );
+        std::printf( "2 : y = %d\n", config.getY() );
         std::printf( "\n" );
+        std::printf( "0 : apply\n" );
+        std::printf( "\n" );
+        std::printf( "* : cancel\n" );
+
+        int input;
+        if( inputInt( input ) == false ) {
+            return;
+        }
+
+        switch( input ) {
+        case 1:
+            configDisplayInputX(
+                config
+            );
+            break;
+
+        case 2:
+            configDisplayInputY(
+                config
+            );
+            break;
+
+        case 0:
+            applyDisplayConfig(
+                config
+                , _KEY
+                , _manager
+            );
+            break;
+
+        default:
+            return;
+            break;
+        }
     }
 }
 
@@ -173,7 +281,38 @@ void configDisplayMenu(
     , dp::DisplayManager &  _manager
 )
 {
-    //TODO
+    while( 1 ) {
+        std::printf( "config display\n" );
+        showDisplayesWithIndex(
+            _mutex
+            , _KEYS
+            , _manager
+        );
+        std::printf( "\n" );
+        std::printf( "* : cancel\n" );
+
+        int index;
+        if( inputInt( index ) == false ) {
+            return;
+        }
+
+        dp::DisplayKey  key;
+
+        {
+            Lock    lock( _mutex );
+
+            if( index >= 0 && index < _KEYS.size() ) {
+                key = _KEYS[ index ];
+            } else {
+                return;
+            }
+        }
+
+        configDisplay(
+            key
+            , _manager
+        );
+    }
 }
 
 void mainMenu(
@@ -187,9 +326,15 @@ void mainMenu(
         std::printf( "0 : show displayes\n" );
         std::printf( "1 : show display details\n" );
         std::printf( "2 : config display\n" );
+        std::printf( "\n" );
         std::printf( "* : quit\n" );
 
-        switch( inputInt() ) {
+        int input;
+        if( inputInt( input ) == false ) {
+            return;
+        }
+
+        switch( input ) {
         case 0:
             showDisplayes(
                 _mutex
@@ -218,8 +363,6 @@ void mainMenu(
             return;
             break;
         }
-
-        std::printf( "\n" );
     }
 }
 
