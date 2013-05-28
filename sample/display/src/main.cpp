@@ -5,12 +5,15 @@
 #include "dp/display/display.h"
 #include "dp/display/displaymode.h"
 #include "dp/display/displayconfig.h"
+#include "dp/display/displayrotate.h"
+#include "dp/util/exception.h"
 
 #include <vector>
 #include <mutex>
 #include <algorithm>
 #include <cstring>
 #include <cstdio>
+#include <exception>
 
 typedef std::vector< dp::DisplayKey > Keys;
 typedef std::unique_lock< std::mutex > Lock;
@@ -176,6 +179,36 @@ void showDisplayDetailsMenu(
     }
 }
 
+const auto  ROTATE_NORMAL = "normal";
+const auto  ROTATE_RIGHT = "right";
+const auto  ROTATE_INVERTED = "inverted";
+const auto  ROTATE_LEFT = "left";
+
+const char * getRotateStr(
+    dp::DisplayRotate   _rotate
+)
+{
+    switch( _rotate ) {
+    case dp::DisplayRotate::NORMAL:
+        return ROTATE_NORMAL;
+        break;
+
+    case dp::DisplayRotate::RIGHT:
+        return ROTATE_RIGHT;
+        break;
+
+    case dp::DisplayRotate::INVERTED:
+        return ROTATE_INVERTED;
+        break;
+
+    case dp::DisplayRotate::LEFT:
+        return ROTATE_LEFT;
+        break;
+    }
+
+    DPTHROW( std::exception() )
+}
+
 void configDisplayInputX(
     dp::DisplayConfig & _config
 )
@@ -184,9 +217,11 @@ void configDisplayInputX(
 
     int x;
 
-    if( inputInt( x ) ) {
-        _config.setX( x );
+    if( inputInt( x ) == false ) {
+        return;
     }
+
+    _config.setX( x );
 }
 
 void configDisplayInputY(
@@ -197,9 +232,52 @@ void configDisplayInputY(
 
     int y;
 
-    if( inputInt( y ) ) {
-        _config.setY( y );
+    if( inputInt( y ) == false ) {
+        return;
     }
+
+    _config.setY( y );
+}
+
+void configDisplayInputRotate(
+    dp::DisplayConfig & _config
+)
+{
+    std::printf( "input rotate\n" );
+    std::printf( "0 : normal\n" );
+    std::printf( "1 : right\n" );
+    std::printf( "2 : inverted\n" );
+    std::printf( "3 : left\n" );
+
+    int rotateInt;
+    if( inputInt( rotateInt ) == false ) {
+        return;
+    }
+
+    dp::DisplayRotate   rotate;
+    switch( rotateInt ) {
+    case 0:
+        rotate = dp::DisplayRotate::NORMAL;
+        break;
+
+    case 1:
+        rotate = dp::DisplayRotate::RIGHT;
+        break;
+
+    case 2:
+        rotate = dp::DisplayRotate::INVERTED;
+        break;
+
+    case 3:
+        rotate = dp::DisplayRotate::LEFT;
+        break;
+
+    default:
+        return;
+        break;
+    }
+
+    _config.setRotate( rotate );
 }
 
 void applyDisplayConfig(
@@ -237,6 +315,7 @@ void configDisplay(
         );
         std::printf( "1 : x = %d\n", config.getX() );
         std::printf( "2 : y = %d\n", config.getY() );
+        std::printf( "3 : rotate = %s\n", getRotateStr( config.getRotate() ) );
         std::printf( "\n" );
         std::printf( "0 : apply\n" );
         std::printf( "\n" );
@@ -256,6 +335,12 @@ void configDisplay(
 
         case 2:
             configDisplayInputY(
+                config
+            );
+            break;
+
+        case 3:
+            configDisplayInputRotate(
                 config
             );
             break;
