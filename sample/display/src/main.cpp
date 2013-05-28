@@ -284,11 +284,16 @@ void applyDisplayConfig(
     dp::DisplayConfig &         _config
     , const dp::DisplayKey &    _KEY
     , dp::DisplayManager &      _manager
+    , dp::Display &             _display
 )
 {
     _manager.applyDisplayConfig(
         _KEY
         , _config
+    );
+
+    _display = _manager.getDisplay(
+        _KEY
     );
 }
 
@@ -297,21 +302,21 @@ void configDisplay(
     , dp::DisplayManager &  _manager
 )
 {
-    const auto  DISPLAY = _manager.getDisplay(
+    auto    display = _manager.getDisplay(
         _KEY
     );
 
     dp::DisplayConfig   config(
-        DISPLAY
+        display
     );
 
     while( 1 ) {
         std::printf(
             "config %dx%d+%d+%d\n"
-            , DISPLAY.getWidth()
-            , DISPLAY.getHeight()
-            , DISPLAY.getX()
-            , DISPLAY.getY()
+            , display.getWidth()
+            , display.getHeight()
+            , display.getX()
+            , display.getY()
         );
         std::printf( "1 : x = %d\n", config.getX() );
         std::printf( "2 : y = %d\n", config.getY() );
@@ -350,6 +355,7 @@ void configDisplay(
                 config
                 , _KEY
                 , _manager
+                , display
             );
             break;
 
