@@ -280,6 +280,13 @@ void configDisplayInputRotate(
     _config.setRotate( rotate );
 }
 
+void configDisplayInputMode(
+    dp::DisplayConfig & _config
+)
+{
+    //TODO
+}
+
 void applyDisplayConfig(
     dp::DisplayConfig &         _config
     , const dp::DisplayKey &    _KEY
@@ -310,6 +317,10 @@ void configDisplay(
         display
     );
 
+    auto    mode = _manager.getDisplayMode(
+        config.getModeKey()
+    );
+
     while( 1 ) {
         std::printf(
             "config %dx%d+%d+%d\n"
@@ -321,6 +332,11 @@ void configDisplay(
         std::printf( "1 : x = %d\n", config.getX() );
         std::printf( "2 : y = %d\n", config.getY() );
         std::printf( "3 : rotate = %s\n", getRotateStr( config.getRotate() ) );
+        std::printf(
+            "4 : mode = %dx%d\n"
+            , mode.getWidth()
+            , mode.getHeight()
+        );
         std::printf( "\n" );
         std::printf( "0 : apply\n" );
         std::printf( "\n" );
@@ -346,6 +362,12 @@ void configDisplay(
 
         case 3:
             configDisplayInputRotate(
+                config
+            );
+            break;
+
+        case 4:
+            configDisplayInputMode(
                 config
             );
             break;
