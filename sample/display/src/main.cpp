@@ -68,7 +68,7 @@ void showDisplay(
     );
 }
 
-void showDisplayesImpl(
+void showDisplaysImpl(
     std::mutex &            _mutex
     , const DisplayKeys &   _KEYS
     , dp::DisplayManager &  _manager
@@ -93,14 +93,14 @@ void showDisplayesImpl(
     }
 }
 
-void showDisplayes(
+void showDisplays(
     std::mutex &            _mutex
     , const DisplayKeys &   _KEYS
     , dp::DisplayManager &  _manager
 )
 {
     try {
-        showDisplayesImpl(
+        showDisplaysImpl(
             _mutex
             , _KEYS
             , _manager
@@ -108,7 +108,7 @@ void showDisplayes(
     } catch( const dp::DisplayManagerException & ) {}
 }
 
-void showDisplayesWithIndex(
+void showDisplaysWithIndex(
     std::mutex &            _mutex
     , const DisplayKeys &   _KEYS
     , dp::DisplayManager &  _manager
@@ -191,7 +191,7 @@ void showDisplayDetailsMenuImpl(
 {
     while( 1 ) {
         std::printf( "show display details\n" );
-        showDisplayesWithIndex(
+        showDisplaysWithIndex(
             _mutex
             , _KEYS
             , _manager
@@ -560,7 +560,7 @@ void configDisplayMenuImpl(
 {
     while( 1 ) {
         std::printf( "config display\n" );
-        showDisplayesWithIndex(
+        showDisplaysWithIndex(
             _mutex
             , _KEYS
             , _manager
@@ -615,7 +615,7 @@ void mainMenu(
 {
     while( 1 ) {
         std::printf( "main menu\n" );
-        std::printf( "0 : show displayes\n" );
+        std::printf( "0 : show displays\n" );
         std::printf( "1 : show display details\n" );
         std::printf( "2 : config display\n" );
         std::printf( "\n" );
@@ -628,7 +628,7 @@ void mainMenu(
 
         switch( input ) {
         case 0:
-            showDisplayes(
+            showDisplays(
                 _mutex
                 , _KEYS
                 , _manager
