@@ -15,7 +15,8 @@
 #include <cstdio>
 #include <exception>
 
-typedef std::vector< dp::DisplayKey > Keys;
+typedef std::vector< dp::DisplayKey > DisplayKeys;
+typedef std::vector< dp::DisplayModeKey > DisplayModeKeys;
 typedef std::unique_lock< std::mutex > Lock;
 
 bool inputInt(
@@ -68,7 +69,7 @@ void showDisplay(
 
 void showDisplayes(
     std::mutex &            _mutex
-    , const Keys &          _KEYS
+    , const DisplayKeys &   _KEYS
     , dp::DisplayManager &  _manager
 )
 {
@@ -87,7 +88,7 @@ void showDisplayes(
 
 void showDisplayesWithIndex(
     std::mutex &            _mutex
-    , const Keys &          _KEYS
+    , const DisplayKeys &   _KEYS
     , dp::DisplayManager &  _manager
 )
 {
@@ -141,7 +142,7 @@ void showDisplayDetails(
 
 void showDisplayDetailsMenu(
     std::mutex &            _mutex
-    , const Keys &          _KEYS
+    , const DisplayKeys &   _KEYS
     , dp::DisplayManager &  _manager
 )
 {
@@ -175,6 +176,39 @@ void showDisplayDetailsMenu(
         showDisplayDetails(
             key
             , _manager
+        );
+    }
+}
+
+void showDisplayMode(
+    const dp::DisplayMode & _MODE
+)
+{
+    std::printf(
+        "%dx%d %fHz\n"
+        //"%dx%d %.1fHz\n"
+        , _MODE.getWidth()
+        , _MODE.getHeight()
+        , _MODE.getRefreshRate()
+    );
+}
+
+void showDisplayModesWithIndex(
+    const DisplayModeKeys & _KEYS
+    , dp::DisplayManager &  _manager
+)
+{
+    auto    index = 0;
+    for( const auto & KEY : _KEYS ) {
+        std::printf( "%d : ", index );
+        index++;
+
+        const auto  MODE = _manager.getDisplayMode(
+            KEY
+        );
+
+        showDisplayMode(
+            MODE
         );
     }
 }
@@ -248,6 +282,8 @@ void configDisplayInputRotate(
     std::printf( "1 : right\n" );
     std::printf( "2 : inverted\n" );
     std::printf( "3 : left\n" );
+    std::printf( "\n" );
+    std::printf( "* : cancel\n" );
 
     int rotateInt;
     if( inputInt( rotateInt ) == false ) {
@@ -281,10 +317,40 @@ void configDisplayInputRotate(
 }
 
 void configDisplayInputMode(
-    dp::DisplayConfig & _config
+    dp::DisplayConfig &         _config
+    , const dp::DisplayKey &    _KEY
+    , dp::DisplayManager &      _manager
+    , dp::DisplayMode &         _mode
 )
 {
-    //TODO
+    const auto  MODE_KEYS = _manager.getDisplayModeKeys(
+        _KEY
+    );
+
+    std::printf( "input mode\n" );
+    showDisplayModesWithIndex(
+        MODE_KEYS
+        , _manager
+    );
+    std::printf( "\n" );
+    std::printf( "* : cancel\n" );
+
+    int index;
+    if( inputInt( index ) == false ) {
+        return;
+    }
+
+    if( index >= 0 && index < MODE_KEYS.size() ) {
+        const auto &    MODE_KEY = MODE_KEYS[ index ];
+
+        _config.setModeKey(
+            MODE_KEY
+        );
+
+        _mode = _manager.getDisplayMode(
+            MODE_KEY
+        );
+    }
 }
 
 void applyDisplayConfig(
@@ -332,10 +398,9 @@ void configDisplay(
         std::printf( "1 : x = %d\n", config.getX() );
         std::printf( "2 : y = %d\n", config.getY() );
         std::printf( "3 : rotate = %s\n", getRotateStr( config.getRotate() ) );
-        std::printf(
-            "4 : mode = %dx%d\n"
-            , mode.getWidth()
-            , mode.getHeight()
+        std::printf( "4 : mode = " );
+        showDisplayMode(
+            mode
         );
         std::printf( "\n" );
         std::printf( "0 : apply\n" );
@@ -369,6 +434,9 @@ void configDisplay(
         case 4:
             configDisplayInputMode(
                 config
+                , _KEY
+                , _manager
+                , mode
             );
             break;
 
@@ -390,7 +458,7 @@ void configDisplay(
 
 void configDisplayMenu(
     std::mutex &            _mutex
-    , const Keys &          _KEYS
+    , const DisplayKeys &   _KEYS
     , dp::DisplayManager &  _manager
 )
 {
@@ -430,7 +498,7 @@ void configDisplayMenu(
 
 void mainMenu(
     std::mutex &            _mutex
-    , const Keys &          _KEYS
+    , const DisplayKeys &   _KEYS
     , dp::DisplayManager &  _manager
 )
 {
@@ -479,9 +547,9 @@ void mainMenu(
     }
 }
 
-Keys::iterator findKey(
+DisplayKeys::iterator findDisplayKey(
     const dp::DisplayKey &  _KEY
-    , Keys &                _keys
+    , DisplayKeys &         _keys
 )
 {
     return std::find_if(
@@ -499,12 +567,12 @@ Keys::iterator findKey(
     );
 }
 
-void addKey(
+void addDisplayKey(
     const dp::DisplayKey &  _KEY
-    , Keys &                _keys
+    , DisplayKeys &         _keys
 )
 {
-    if( findKey(
+    if( findDisplayKey(
         _KEY
         , _keys
     ) != _keys.end() ) {
@@ -514,12 +582,12 @@ void addKey(
     _keys.push_back( _KEY );
 }
 
-void removeKey(
+void removeDisplayKey(
     const dp::DisplayKey &  _KEY
-    , Keys &                _keys
+    , DisplayKeys &         _keys
 )
 {
-    auto    it = findKey(
+    auto    it = findDisplayKey(
         _KEY
         , _keys
     );
@@ -535,7 +603,7 @@ int dpMain(
 )
 {
     std::mutex  mutex;
-    Keys        keys;
+    DisplayKeys keys;
 
     dp::DisplayManagerInfo  displayManagerInfo;
     displayManagerInfo.setConnectEventHandler(
@@ -552,12 +620,12 @@ int dpMain(
             Lock    lock( mutex );
 
             if( _connected ) {
-                addKey(
+                addDisplayKey(
                     _KEY
                     , keys
                 );
             } else {
-                removeKey(
+                removeDisplayKey(
                     _KEY
                     , keys
                 );
