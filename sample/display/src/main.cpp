@@ -6,6 +6,7 @@
 #include "dp/display/displaymode.h"
 #include "dp/display/displayconfig.h"
 #include "dp/display/displayrotate.h"
+#include "dp/display/displaymanagerexception.h"
 #include "dp/util/exception.h"
 
 #include <vector>
@@ -67,7 +68,7 @@ void showDisplay(
     );
 }
 
-void showDisplayes(
+void showDisplayesImpl(
     std::mutex &            _mutex
     , const DisplayKeys &   _KEYS
     , dp::DisplayManager &  _manager
@@ -76,14 +77,35 @@ void showDisplayes(
     Lock    lock( _mutex );
 
     for( const auto & KEY : _KEYS ) {
-        const auto  DISPLAY = _manager.getDisplay(
-            KEY
-        );
+        try {
+            const auto  DISPLAY = _manager.getDisplay(
+                KEY
+            );
 
-        showDisplay(
-            DISPLAY
-        );
+            showDisplay(
+                DISPLAY
+            );
+        } catch( const dp::DisplayManagerException & ) {
+            std::printf( "missing display\n" );
+
+            throw;
+        }
     }
+}
+
+void showDisplayes(
+    std::mutex &            _mutex
+    , const DisplayKeys &   _KEYS
+    , dp::DisplayManager &  _manager
+)
+{
+    try {
+        showDisplayesImpl(
+            _mutex
+            , _KEYS
+            , _manager
+        );
+    } catch( const dp::DisplayManagerException & ) {}
 }
 
 void showDisplayesWithIndex(
@@ -99,13 +121,19 @@ void showDisplayesWithIndex(
         std::printf( "%d : ", index );
         index++;
 
-        const auto  DISPLAY = _manager.getDisplay(
-            KEY
-        );
+        try {
+            const auto  DISPLAY = _manager.getDisplay(
+                KEY
+            );
 
-        showDisplay(
-            DISPLAY
-        );
+            showDisplay(
+                DISPLAY
+            );
+        } catch( const dp::DisplayManagerException & ) {
+            std::printf( "missing display\n" );
+
+            throw;
+        }
     }
 }
 
@@ -114,33 +142,48 @@ void showDisplayDetails(
     , dp::DisplayManager &  _manager
 )
 {
-    const auto  DISPLAY = _manager.getDisplay(
-        _KEY
-    );
+    dp::Display display;
+    try {
+        display = _manager.getDisplay(
+            _KEY
+        );
+    } catch( const dp::DisplayManagerException & ) {
+        std::printf( "missing display\n" );
 
-    const auto  MODE = _manager.getDisplayMode(
-        DISPLAY.getModeKey()
-    );
+        throw;
+    }
 
     std::printf(
         "size : %dx%d\n"
-        , DISPLAY.getWidth()
-        , DISPLAY.getHeight()
+        , display.getWidth()
+        , display.getHeight()
     );
     std::printf(
         "position : %dx%d\n"
-        , DISPLAY.getX()
-        , DISPLAY.getY()
+        , display.getX()
+        , display.getY()
     );
+
+    dp::DisplayMode mode;
+    try {
+        mode = _manager.getDisplayMode(
+            display.getModeKey()
+        );
+    } catch( const dp::DisplayManagerException & ) {
+        std::printf( "missing display mode\n" );
+
+        throw;
+    }
+
     std::printf( "mode :\n" );
     std::printf(
         "  size : %dx%d\n"
-        , MODE.getWidth()
-        , MODE.getHeight()
+        , mode.getWidth()
+        , mode.getHeight()
     );
 }
 
-void showDisplayDetailsMenu(
+void showDisplayDetailsMenuImpl(
     std::mutex &            _mutex
     , const DisplayKeys &   _KEYS
     , dp::DisplayManager &  _manager
@@ -180,13 +223,27 @@ void showDisplayDetailsMenu(
     }
 }
 
+void showDisplayDetailsMenu(
+    std::mutex &            _mutex
+    , const DisplayKeys &   _KEYS
+    , dp::DisplayManager &  _manager
+)
+{
+    try {
+        showDisplayDetailsMenuImpl(
+            _mutex
+            , _KEYS
+            , _manager
+        );
+    } catch( const dp::DisplayManagerException & ) {}
+}
+
 void showDisplayMode(
     const dp::DisplayMode & _MODE
 )
 {
     std::printf(
-        "%dx%d %fHz\n"
-        //"%dx%d %.1fHz\n"
+        "%dx%d %.1fHz\n"
         , _MODE.getWidth()
         , _MODE.getHeight()
         , _MODE.getRefreshRate()
@@ -203,13 +260,19 @@ void showDisplayModesWithIndex(
         std::printf( "%d : ", index );
         index++;
 
-        const auto  MODE = _manager.getDisplayMode(
-            KEY
-        );
+        try {
+            const auto  MODE = _manager.getDisplayMode(
+                KEY
+            );
 
-        showDisplayMode(
-            MODE
-        );
+            showDisplayMode(
+                MODE
+            );
+        } catch( const dp::DisplayManagerException & ) {
+            std::printf( "missing display mode\n" );
+
+            throw;
+        }
     }
 }
 
@@ -323,13 +386,20 @@ void configDisplayInputMode(
     , dp::DisplayMode &         _mode
 )
 {
-    const auto  MODE_KEYS = _manager.getDisplayModeKeys(
-        _KEY
-    );
+    DisplayModeKeys modeKeys;
+    try {
+        modeKeys = _manager.getDisplayModeKeys(
+            _KEY
+        );
+    } catch( const dp::DisplayManagerException & ) {
+        std::printf( "missing display\n" );
+
+        throw;
+    }
 
     std::printf( "input mode\n" );
     showDisplayModesWithIndex(
-        MODE_KEYS
+        modeKeys
         , _manager
     );
     std::printf( "\n" );
@@ -340,16 +410,22 @@ void configDisplayInputMode(
         return;
     }
 
-    if( index >= 0 && index < MODE_KEYS.size() ) {
-        const auto &    MODE_KEY = MODE_KEYS[ index ];
+    if( index >= 0 && index < modeKeys.size() ) {
+        const auto &    MODE_KEY = modeKeys[ index ];
 
         _config.setModeKey(
             MODE_KEY
         );
 
-        _mode = _manager.getDisplayMode(
-            MODE_KEY
-        );
+        try {
+            _mode = _manager.getDisplayMode(
+                MODE_KEY
+            );
+        } catch( const dp::DisplayManagerException & ) {
+            std::printf( "missing display mode\n" );
+
+            throw;
+        }
     }
 }
 
@@ -360,14 +436,20 @@ void applyDisplayConfig(
     , dp::Display &             _display
 )
 {
-    _manager.applyDisplayConfig(
-        _KEY
-        , _config
-    );
+    try {
+        _manager.applyDisplayConfig(
+            _KEY
+            , _config
+        );
 
-    _display = _manager.getDisplay(
-        _KEY
-    );
+        _display = _manager.getDisplay(
+            _KEY
+        );
+    } catch( const dp::DisplayManagerException & ) {
+        std::printf( "missing display\n" );
+
+        throw;
+    }
 }
 
 void configDisplay(
@@ -375,17 +457,31 @@ void configDisplay(
     , dp::DisplayManager &  _manager
 )
 {
-    auto    display = _manager.getDisplay(
-        _KEY
-    );
+    dp::Display display;
+    try {
+        display = _manager.getDisplay(
+            _KEY
+        );
+    } catch( const dp::DisplayManagerException & ) {
+        std::printf( "missing display\n" );
+
+        throw;
+    }
 
     dp::DisplayConfig   config(
         display
     );
 
-    auto    mode = _manager.getDisplayMode(
-        config.getModeKey()
-    );
+    dp::DisplayMode mode;
+    try {
+        mode = _manager.getDisplayMode(
+            config.getModeKey()
+        );
+    } catch( const dp::DisplayManagerException & ) {
+        std::printf( "missing display mode\n" );
+
+        throw;
+    }
 
     while( 1 ) {
         std::printf(
@@ -456,7 +552,7 @@ void configDisplay(
     }
 }
 
-void configDisplayMenu(
+void configDisplayMenuImpl(
     std::mutex &            _mutex
     , const DisplayKeys &   _KEYS
     , dp::DisplayManager &  _manager
@@ -494,6 +590,21 @@ void configDisplayMenu(
             , _manager
         );
     }
+}
+
+void configDisplayMenu(
+    std::mutex &            _mutex
+    , const DisplayKeys &   _KEYS
+    , dp::DisplayManager &  _manager
+)
+{
+    try {
+        configDisplayMenuImpl(
+            _mutex
+            , _KEYS
+            , _manager
+        );
+    } catch( const dp::DisplayManagerException & ) {}
 }
 
 void mainMenu(
