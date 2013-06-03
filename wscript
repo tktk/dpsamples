@@ -45,6 +45,7 @@ CXXFLAGS = {
     },
     common.WINDOWS : {
         common.COMMON : [
+            '/EHs',
             '/D_VARIADIC_MAX=6',    # vs2012用
             '/Wall',
             '/nologo',

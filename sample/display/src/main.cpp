@@ -446,9 +446,9 @@ void applyDisplayConfig(
             _KEY
         );
     } catch( const dp::DisplayManagerException & ) {
-        std::printf( "missing display\n" );
+        std::printf( "failed config display\n" );
 
-        throw;
+        return;
     }
 }
 
